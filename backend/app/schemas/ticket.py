@@ -12,6 +12,8 @@ from typing import List, Optional
 
 from pydantic import BaseModel, EmailStr, Field
 
+from app.utils.enums import TicketStatus
+
 
 class TicketCreate(BaseModel):
     """
@@ -21,7 +23,7 @@ class TicketCreate(BaseModel):
     """
 
     customer_name: str = Field(
-        ...,  # "..." means required (ellipsis)
+        ...,
         min_length=1,
         max_length=100,
         description="Full name of the customer",
@@ -46,9 +48,9 @@ class TicketCreate(BaseModel):
 
 class TicketResponse(BaseModel):
     """
-    Schema for returning ticket data to the client.
+    Schema for returning ticket data after creation.
 
-    This includes all fields including server-generated ones
+    Includes all fields including server-generated ones
     like ticket_id, status, and timestamps.
     """
 
@@ -60,9 +62,9 @@ class TicketResponse(BaseModel):
     customer_email: str
     subject: str
     description: str
-    status: str = Field(
-        default="Open",
-        description="Current status: Open, In Progress, or Closed",
+    status: TicketStatus = Field(
+        default=TicketStatus.OPEN,
+        description="Current ticket status",
     )
     created_at: datetime
     updated_at: datetime
@@ -70,50 +72,57 @@ class TicketResponse(BaseModel):
 
 class TicketListItem(BaseModel):
     """
-    Schema for list view — lighter than full response.
+    Schema for list view — lighter summary for table rows.
 
-    Only includes fields shown in the table/list.
+    Only includes fields shown in the dashboard table.
     """
 
     ticket_id: str
     customer_name: str
     subject: str
-    status: str
+    status: TicketStatus
     created_at: datetime
 
 
 class TicketUpdate(BaseModel):
     """
-    Schema for updating a ticket.
+    Schema for updating a ticket's status and/or adding a comment.
 
     All fields are optional — client only sends what they want to change.
     """
 
-    status: Optional[str] = Field(
+    status: Optional[TicketStatus] = Field(
         default=None,
-        description="New status: Open, In Progress, or Closed",
+        description="New ticket status",
     )
-    note_text: Optional[str] = Field(
+    comment: Optional[str] = Field(
         default=None,
         max_length=2000,
-        description="Note/comment to add to the ticket",
+        description="Internal note/comment to attach to this ticket",
     )
 
 
-class NoteResponse(BaseModel):
-    """Schema for returning a note."""
+class CommentResponse(BaseModel):
+    """Schema for returning a single comment on a ticket."""
 
     id: int
-    note_text: str
+    comment_text: str = Field(
+        ...,
+        alias="note_text",
+        description="The comment text (mapped from database column note_text)",
+    )
     created_by: Optional[str] = None
     created_at: datetime
+
+    class Config:
+        populate_by_name = True
 
 
 class TicketDetailResponse(BaseModel):
     """
     Schema for the detailed ticket view.
 
-    Includes all ticket fields plus associated notes.
+    Includes all ticket fields plus associated comments.
     """
 
     ticket_id: str
@@ -121,14 +130,21 @@ class TicketDetailResponse(BaseModel):
     customer_email: str
     subject: str
     description: str
-    status: str
+    status: TicketStatus
     created_at: datetime
     updated_at: datetime
-    notes: List[NoteResponse] = []
+    comments: List[CommentResponse] = Field(
+        default=[],
+        alias="notes",
+        description="List of comments on this ticket",
+    )
+
+    class Config:
+        populate_by_name = True
 
 
 class TicketUpdateResponse(BaseModel):
-    """Schema returned after a successful update."""
+    """Schema returned after a successful ticket update."""
 
     success: bool = True
     updated_at: datetime
