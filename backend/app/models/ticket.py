@@ -11,6 +11,7 @@ from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 
 from app.database.connection import Base
+from app.utils.enums import TicketStatus
 
 
 class Ticket(Base):
@@ -24,7 +25,7 @@ class Ticket(Base):
     customer_email = Column(String(100), nullable=False)
     subject = Column(String(200), nullable=False)
     description = Column(Text, nullable=False)
-    status = Column(String(20), default="Open", nullable=False)
+    status = Column(String(20), default=TicketStatus.OPEN.value, nullable=False)
     created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow, nullable=False)
 
