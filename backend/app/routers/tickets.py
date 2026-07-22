@@ -2,6 +2,8 @@
 API routes for ticket operations.
 
 Each function maps to an HTTP endpoint.
+These routes are thin — they delegate to the service layer
+for all business logic.
 """
 
 from typing import Optional
@@ -36,8 +38,8 @@ def create_new_ticket(
     """
     Create a new support ticket.
 
-    - **ticket_data**: JSON body with customer_name, customer_email, subject, description
-    - Returns the created ticket with generated ticket_id and timestamp
+    Accepts customer_name, customer_email, subject, and description.
+    Returns the created ticket with auto-generated ticket_id and timestamp.
     """
     ticket = create_ticket(db=db, ticket_data=ticket_data)
     return ticket
@@ -53,7 +55,7 @@ def list_all_tickets(
     List all tickets with optional filters.
 
     - **status**: Filter by Open, In Progress, or Closed
-    - **search**: Search across name, email, subject, description, ticket_id
+    - **search**: Case-insensitive search across name, email, subject, description, and ticket ID
     """
     tickets = list_tickets(db=db, status=status, search=search)
     return tickets
@@ -65,7 +67,7 @@ def get_ticket_detail(
     db: Session = Depends(get_db),
 ):
     """
-    Get full details of a single ticket including all notes.
+    Get full details of a single ticket including all comments.
 
     - **ticket_id**: The human-readable ID (e.g., TKT-001)
     """
@@ -87,10 +89,10 @@ def update_existing_ticket(
     db: Session = Depends(get_db),
 ):
     """
-    Update a ticket's status and/or add a note.
+    Update a ticket's status and/or add a comment.
 
     - **ticket_id**: The human-readable ID (e.g., TKT-001)
-    - **update_data**: JSON body with optional status and/or note_text
+    - **update_data**: JSON body with optional status and/or comment fields
     """
     ticket = get_ticket_by_ticket_id(db=db, ticket_id=ticket_id)
 
