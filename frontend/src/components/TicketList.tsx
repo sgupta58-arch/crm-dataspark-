@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { fetchTickets } from '../api/tickets'
+import { useDebounce } from '../hooks/useDebounce'
+import { STATUS_OPTIONS, STATUS_BADGES } from '../constants'
 import type { TicketListItem } from '../types/ticket'
 
 interface Props {
@@ -8,24 +10,19 @@ interface Props {
   onCreateNew: () => void
 }
 
-const STATUS_OPTIONS = ['', 'Open', 'In Progress', 'Closed'] as const
-
-const STATUS_BADGES: Record<string, { bg: string; text: string; dot: string }> = {
-  'Open': { bg: 'bg-emerald-50', text: 'text-emerald-700', dot: 'bg-emerald-500' },
-  'In Progress': { bg: 'bg-amber-50', text: 'text-amber-700', dot: 'bg-amber-500' },
-  'Closed': { bg: 'bg-gray-100', text: 'text-gray-600', dot: 'bg-gray-400' },
-}
-
 export default function TicketList({ onSelect, onCreateNew }: Props) {
-  const [status, setStatus] = useState('')
-  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
+  const [searchInput, setSearchInput] = useState('')
+
+  // Debounce search by 300ms to avoid firing API calls on every keystroke
+  const debouncedSearch = useDebounce(searchInput, 300)
 
   const { data: tickets, isLoading, isError, error } = useQuery<TicketListItem[]>({
-    queryKey: ['tickets', status, search],
-    queryFn: () => fetchTickets(status || undefined, search || undefined),
+    queryKey: ['tickets', statusFilter, debouncedSearch],
+    queryFn: () => fetchTickets(statusFilter || undefined, debouncedSearch || undefined),
   })
 
-  // Stats summary
+  // Compute summary counts from fetched data
   const openCount = tickets?.filter(t => t.status === 'Open').length ?? 0
   const inProgressCount = tickets?.filter(t => t.status === 'In Progress').length ?? 0
   const closedCount = tickets?.filter(t => t.status === 'Closed').length ?? 0
@@ -49,7 +46,7 @@ export default function TicketList({ onSelect, onCreateNew }: Props) {
         </button>
       </div>
 
-      {/* Stats Cards */}
+      {/* Stats Cards — only show when data is available */}
       {tickets && tickets.length > 0 && (
         <div className="grid grid-cols-3 gap-4">
           {[
@@ -78,14 +75,14 @@ export default function TicketList({ onSelect, onCreateNew }: Props) {
             <input
               type="text"
               placeholder="Search by name, email, ID, or description..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
             />
           </div>
           <select
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
             className="px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm bg-white min-w-[140px]"
           >
             <option value="">All Status</option>
@@ -121,9 +118,11 @@ export default function TicketList({ onSelect, onCreateNew }: Props) {
           </div>
           <h3 className="text-lg font-medium text-gray-900 mb-1">No tickets found</h3>
           <p className="text-gray-500 text-sm mb-6">
-            {search || status ? 'Try adjusting your search or filter criteria.' : 'Get started by creating your first support ticket.'}
+            {searchInput || statusFilter
+              ? 'Try adjusting your search or filter criteria.'
+              : 'Get started by creating your first support ticket.'}
           </p>
-          {!search && !status && (
+          {!searchInput && !statusFilter && (
             <button
               onClick={onCreateNew}
               className="inline-flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-lg hover:bg-blue-700 font-medium text-sm cursor-pointer"
@@ -137,7 +136,7 @@ export default function TicketList({ onSelect, onCreateNew }: Props) {
         </div>
       )}
 
-      {/* Table */}
+      {/* Data Table */}
       {tickets && tickets.length > 0 && (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
@@ -152,7 +151,7 @@ export default function TicketList({ onSelect, onCreateNew }: Props) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {tickets.map((t, i) => {
+                {tickets.map((t) => {
                   const badge = STATUS_BADGES[t.status] || STATUS_BADGES['Open']
                   return (
                     <tr
@@ -195,7 +194,7 @@ export default function TicketList({ onSelect, onCreateNew }: Props) {
           </div>
           <div className="bg-gray-50 border-t border-gray-200 px-6 py-3 text-sm text-gray-500">
             Showing {tickets.length} ticket{tickets.length !== 1 ? 's' : ''}
-            {(search || status) && ' (filtered)'}
+            {(searchInput || statusFilter) && ' (filtered)'}
           </div>
         </div>
       )}
