@@ -6,8 +6,19 @@ import type {
   TicketUpdateResponse,
 } from '../types/ticket'
 
+/**
+ * Base URL for the API.
+ * Uses VITE_API_URL environment variable, falls back to localhost for development.
+ */
 const API_BASE = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000'
 
+/**
+ * Generic request wrapper with error handling.
+ *
+ * - Automatically sets Content-Type to JSON
+ * - Parses error responses and throws descriptive errors
+ * - Generic type T ensures type-safe responses
+ */
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${url}`, {
     headers: { 'Content-Type': 'application/json' },
@@ -15,7 +26,7 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
   })
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
-    throw new Error(body.detail || `HTTP ${res.status}`)
+    throw new Error(body.detail || `Request failed with status ${res.status}`)
   }
   return res.json()
 }

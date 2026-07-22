@@ -1,14 +1,16 @@
+export type TicketStatus = 'Open' | 'In Progress' | 'Closed'
+
 export interface TicketListItem {
   ticket_id: string
   customer_name: string
   subject: string
-  status: string
+  status: TicketStatus
   created_at: string
 }
 
-export interface Note {
+export interface Comment {
   id: number
-  note_text: string
+  comment_text: string
   created_by: string | null
   created_at: string
 }
@@ -19,10 +21,10 @@ export interface TicketDetail {
   customer_email: string
   subject: string
   description: string
-  status: string
+  status: TicketStatus
   created_at: string
   updated_at: string
-  notes: Note[]
+  comments: Comment[]
 }
 
 export interface TicketCreatePayload {
@@ -33,8 +35,8 @@ export interface TicketCreatePayload {
 }
 
 export interface TicketUpdatePayload {
-  status?: string
-  note_text?: string
+  status?: TicketStatus
+  comment?: string
 }
 
 export interface TicketUpdateResponse {
