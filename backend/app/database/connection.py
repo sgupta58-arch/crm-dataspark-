@@ -18,6 +18,8 @@ DATABASE_URL = os.getenv(
     "sqlite:///./crm.db"  # Default for local development
 )
 
+print("DATABASE_URL =", DATABASE_URL)
+
 # Create the engine — this is the connection factory
 # SQLite needs check_same_thread=False for concurrent reads
 # PostgreSQL doesn't need this flag
