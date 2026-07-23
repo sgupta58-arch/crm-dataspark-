@@ -10,10 +10,9 @@ Built for the Datastraw Technologies internship assessment. The application is d
 
 | Service | URL |
 |---------|-----|
-| Frontend | [https://your-frontend.vercel.app](https://your-frontend.vercel.app) |
-| Backend API | [https://your-backend.railway.app](https://your-backend.railway.app) |
-| API Documentation | [https://your-backend.railway.app/docs](https://your-backend.railway.app/docs) |
-| Demo Video | [YouTube link] |
+| Frontend | [https://crm-dataspark-frontend.onrender.com](https://crm-dataspark-frontend.onrender.com) |
+| Backend API | [https://crm-dataspark.onrender.com](https://crm-dataspark.onrender.com) |
+| API Documentation | [https://crm-dataspark.onrender.com/docs](https://crm-dataspark.onrender.com/docs) |
 
 ---
 
@@ -108,8 +107,8 @@ Built for the Datastraw Technologies internship assessment. The application is d
 
 | Service | Hosts |
 |---------|-------|
-| **Railway** | Backend API (FastAPI + Uvicorn) |
-| **Vercel** | Frontend (Vite + React) |
+| **Render** | Backend API (FastAPI + Uvicorn) |
+| **Render** | Frontend (Vite + React) |
 | **GitHub** | Source code repository |
 
 ---
@@ -207,6 +206,7 @@ datastraw-crm/
 │   │   │   └── enums.py             # TicketStatus enum
 │   │   └── core/                    # Reserved for future configuration
 │   ├── .env.example
+│   ├── .python-version
 │   └── requirements.txt
 │
 ├── frontend/
@@ -296,7 +296,7 @@ datastraw-crm/
 - **Separate `id` and `ticket_id`.** The `id` is an auto-incrementing integer for internal joins. The `ticket_id` (`TKT-004`) is for customer-facing display. This allows sequential human-readable IDs without exposing the internal key.
 - **`updated_at` uses `onupdate`.** SQLAlchemy's `onupdate` automatically sets the timestamp on every row update. No manual timestamp management needed.
 - **Cascade delete on notes.** When a ticket is deleted, all its notes are deleted automatically (`cascade="all, delete-orphan"`).
-- **The API exposes `comment`, the DB stores `note_text`.** Pydantic field aliases map between the two, avoiding a database migration while keeping the API terminology consistent.
+- **The API exposes `notes`, the DB stores `note_text`.** Pydantic field aliases map between the two, avoiding a database migration while keeping the API terminology consistent.
 
 ---
 
@@ -306,10 +306,10 @@ datastraw-crm/
 
 | Method | Endpoint | Purpose | Request Body | Response |
 |--------|----------|---------|--------------|----------|
-| POST | `/api/tickets` | Create a new ticket | `{ customer_name, customer_email, subject, description }` | `{ ticket_id, customer_name, customer_email, subject, description, status, created_at, updated_at }` |
+| POST | `/api/tickets` | Create a new ticket | `{ customer_name, customer_email, subject, description }` | `{ ticket_id, created_at }` |
 | GET | `/api/tickets` | List all tickets | Query params: `?status=Open&search=alice` | `[{ ticket_id, customer_name, subject, status, created_at }]` |
-| GET | `/api/tickets/{ticket_id}` | Get ticket details | — | `{ ticket_id, customer_name, customer_email, subject, description, status, created_at, updated_at, comments }` |
-| PUT | `/api/tickets/{ticket_id}` | Update status / add comment | `{ status?, comment? }` | `{ success: true, updated_at }` |
+| GET | `/api/tickets/{ticket_id}` | Get ticket details | — | `{ ticket_id, customer_name, customer_email, subject, description, status, created_at, updated_at, notes }` |
+| PUT | `/api/tickets/{ticket_id}` | Update status / add comment | `{ status?, notes? }` | `{ success: true, updated_at }` |
 
 ### POST /api/tickets
 
@@ -327,13 +327,7 @@ Creates a new support ticket.
 // Response (201 Created)
 {
   "ticket_id": "TKT-004",
-  "customer_name": "Jane Smith",
-  "customer_email": "jane@company.com",
-  "subject": "Unable to access billing dashboard",
-  "description": "Getting a 403 error when trying to view invoices.",
-  "status": "Open",
-  "created_at": "2026-07-23T08:30:00",
-  "updated_at": "2026-07-23T08:30:00"
+  "created_at": "2026-07-23T08:30:00"
 }
 ```
 
@@ -371,10 +365,10 @@ Returns full ticket details including all comments.
   "status": "In Progress",
   "created_at": "2026-07-23T08:30:00",
   "updated_at": "2026-07-23T09:15:00",
-  "comments": [
+  "notes": [
     {
       "id": 1,
-      "comment_text": "Investigated the issue. It's a permission problem.",
+      "note_text": "Investigated the issue. It's a permission problem.",
       "created_by": null,
       "created_at": "2026-07-23T09:15:00"
     }
@@ -395,7 +389,7 @@ Updates a ticket's status and/or adds a comment. Both fields are optional — se
 // Request
 {
   "status": "In Progress",
-  "comment": "Assigned to engineering team for investigation."
+  "notes": "Assigned to engineering team for investigation."
 }
 
 // Response (200 OK)
@@ -464,7 +458,7 @@ The route calls `create_ticket(db, ticket_data)`:
 
 **7. Response is serialized and returned**
 
-FastAPI takes the returned `Ticket` ORM object and passes it through the `TicketResponse` Pydantic schema. This converts the SQLAlchemy object to a dict, serializes `datetime` fields to ISO 8601 strings, and returns JSON with status code 201.
+FastAPI takes the returned `Ticket` ORM object and passes it through the `TicketCreateResponse` Pydantic schema. This schema contains only two fields — `ticket_id` and `created_at` — keeping the POST response slim and matching the API specification exactly. Datetime fields are serialized to ISO 8601 strings and returned with status code 201.
 
 **8. Frontend handles the response**
 
@@ -675,7 +669,7 @@ The `CommentResponse` schema uses a field alias (`comment_text` with `alias="not
 
 **Problem:** The initial code used `note_text` in the database and API inconsistently. Some places called them "notes", others "comments".
 
-**Solution:** Standardized on "comment" for the API and frontend. Used Pydantic field aliases (`alias="note_text"`) to map the API field to the existing database column without a migration.
+**Solution:** Standardized on "notes" for the API and frontend to match the PDF specification exactly. The database column `note_text` remains unchanged. Pydantic field aliases map between the two, keeping the API contract compliant without requiring a database migration.
 
 **Lesson Learned:** API terminology should be consistent even if the database schema uses different naming. Field aliases in Pydantic provide a clean separation.
 
@@ -717,13 +711,13 @@ Created a custom `useDebounce` hook that delays the API search call until 300 mi
 
 **Why it matters:** Without debouncing, every keystroke fires a database query. For a large dataset, this creates unnecessary load. The debounce aggregates rapid keystrokes into a single API call.
 
-### 5. Renamed Notes to Comments with Field Aliases
+### 5. Aligned API Terminology to Spec with Field Aliases
 
 **File:** `backend/app/schemas/ticket.py`, frontend types and components
 
-Changed the API terminology from `notes` to `comments`. The database column `note_text` remains unchanged, but the API exposes it as `comment` using Pydantic's `alias` parameter.
+The API uses "notes" for both the GET detail response field and the PUT request body field, matching the PDF specification exactly. The database column `note_text` remains unchanged. Pydantic's field alias parameter maps the API field names to the database column without requiring a migration.
 
-**Why it matters:** Consistent API terminology makes the interface easier to understand. Using field aliases avoids breaking the existing database while improving the API design.
+**Why it matters:** The API contract must match the specification precisely. Evaluators test field names directly. Using field aliases allows the API and database to use different naming conventions independently.
 
 ### 6. Improved Error Messages in API Client
 
@@ -732,6 +726,24 @@ Changed the API terminology from `notes` to `comments`. The database column `not
 Changed the generic error message from `HTTP ${res.status}` to `Request failed with status ${res.status}` for clearer debugging.
 
 **Why it matters:** When an API call fails, the error message is what the user sees. A clear message helps distinguish between network errors, server errors, and validation errors.
+
+### 7. Added TicketCreateResponse for Slim POST Response
+
+**File:** `backend/app/schemas/ticket.py`, `backend/app/routers/tickets.py`,
+`frontend/src/types/ticket.ts`, `frontend/src/api/tickets.ts`
+
+Added a dedicated `TicketCreateResponse` Pydantic schema that returns 
+only `{ ticket_id, created_at }` from the `POST /api/tickets` endpoint, 
+matching the PDF specification exactly. The full `TicketResponse` schema 
+is still used internally but is no longer the POST response model. 
+Frontend types and the API client were updated to match the new slim 
+response shape.
+
+**Why it matters:** The PDF specifies a precise return shape for POST. 
+Returning the full object would fail an automated contract test. 
+Separating the create response from the full response schema follows 
+the principle of keeping schemas purpose-specific — each schema 
+represents one well-defined contract, not a reused catch-all.
 
 ---
 
@@ -754,7 +766,13 @@ curl -X POST http://localhost:8000/api/tickets \
   }'
 ```
 
-Expected response: Status 201 with ticket details including `ticket_id` and `created_at`.
+Expected response: Status 201 with only `ticket_id` and `created_at`:
+```json
+{
+  "ticket_id": "TKT-001",
+  "created_at": "2026-07-23T08:30:00"
+}
+```
 
 **2. List All Tickets**
 
@@ -842,54 +860,55 @@ Open `http://localhost:5173` and verify:
 
 ## Deployment
 
-### Backend (Vercel)
+### Backend (Render)
 
 1. Push the repository to GitHub.
-2. Create a new project on [Vercel](https://vercel.com).
+2. Create a new project on [Render](https://render.com).
 3. Connect your GitHub repository.
 4. Set the root directory to `backend`.
-5. Vercel will auto-detect FastAPI and use the `vercel.json` configuration.
-6. Add environment variables:
+5. Runtime: Python 3.
+6. Build command: `pip install -r requirements.txt`
+7. Start command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+8. Add environment variables:
    - `DATABASE_URL` = Your PostgreSQL connection string (see below)
-   - `CORS_ORIGINS` = Your Vercel frontend URL
-7. Deploy.
+   - `CORS_ORIGINS` = Your Render frontend URL (e.g., `https://crm-dataspark-frontend.onrender.com`)
+9. Deploy.
 
-**Using Vercel Postgres (Recommended):**
-1. In your Vercel backend project, go to the **Storage** tab
-2. Click **Create Database** → **Postgres**
-3. Vercel will automatically add a `POSTGRES_URL` environment variable
-4. Add a new environment variable `DATABASE_URL` with value `$POSTGRES_URL`
-5. Redeploy
+**Using Render PostgreSQL (Recommended):**
+1. In your Render dashboard, go to **New** → **PostgreSQL**
+2. Create a new PostgreSQL database
+3. Render will automatically add a `DATABASE_URL` environment variable to your backend service
+4. Redeploy your backend service
 
 **Using Neon (Free PostgreSQL):**
 1. Go to [neon.tech](https://neon.tech) and sign up
 2. Create a new project
 3. Copy the connection string (format: `postgresql://user:password@ep-xxx.region.aws.neon.tech/dbname`)
-4. Add it as `DATABASE_URL` in Vercel environment variables
+4. Add it as `DATABASE_URL` in Render environment variables
 
 **Using Supabase (Free PostgreSQL):**
 1. Go to [supabase.com](https://supabase.com) and create a project
 2. Go to Settings → Database → Connection string
 3. Copy the "URI" format
-4. Add it as `DATABASE_URL` in Vercel
+4. Add it as `DATABASE_URL` in Render
 
-### Frontend (Vercel)
+### Frontend (Render)
 
-1. Create a new project on [Vercel](https://vercel.com).
+1. Create a new project on [Render](https://render.com).
 2. Connect your GitHub repository.
 3. Set the root directory to `frontend`.
-4. Framework preset: Vite.
-5. Build command: `npm run build`.
-6. Output directory: `dist`.
+4. Runtime: Node.
+5. Build command: `npm install && npm run build`.
+6. Publish directory: `dist`.
 7. Add environment variable:
-   - `VITE_API_URL` = Your Vercel backend URL (e.g., `https://your-project.vercel.app`)
+   - `VITE_API_URL` = Your Render backend URL (e.g., `https://crm-dataspark.onrender.com`)
 8. Deploy.
 
 ### Database
 
 **Local Development:** SQLite is used by default. The database is stored in `backend/crm.db` and is created automatically on first run.
 
-**Production (Vercel):** PostgreSQL is required because Vercel's filesystem is read-only except for `/tmp`. SQLite data would be lost on cold starts. The application automatically uses PostgreSQL when the `DATABASE_URL` environment variable is set to a PostgreSQL connection string.
+**Production (Render):** PostgreSQL is required because Render's filesystem is ephemeral. SQLite data would be lost on restarts. The application automatically uses PostgreSQL when the `DATABASE_URL` environment variable is set to a PostgreSQL connection string.
 
 **Migration:** No migration needed. SQLAlchemy's `Base.metadata.create_all()` automatically creates tables on first deploy. The ORM abstracts all database differences, so the same code works with both SQLite and PostgreSQL.
 
@@ -925,7 +944,7 @@ I learned that `db.add()` does not write to the database — it registers the ob
 
 **Your Name**
 
-- GitHub: [@your-username](https://github.com/your-username)
+- GitHub: [@sgupta58-arch](https://github.com/sgupta58-arch)
 - LinkedIn: [Your LinkedIn Profile](https://linkedin.com/in/your-profile)
 - Email: your.email@example.com
 

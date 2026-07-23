@@ -43,3 +43,8 @@ export interface TicketUpdateResponse {
   success: boolean
   updated_at: string
 }
+
+export interface TicketCreateResponse {
+  ticket_id: string
+  created_at: string
+}

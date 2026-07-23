@@ -19,6 +19,7 @@ from app.schemas.ticket import (
     TicketDetailResponse,
     TicketUpdate,
     TicketUpdateResponse,
+    TicketCreateResponse,
 )
 from app.services.ticket_service import (
     create_ticket,
@@ -30,7 +31,7 @@ from app.services.ticket_service import (
 router = APIRouter(prefix="/api/tickets", tags=["Tickets"])
 
 
-@router.post("", response_model=TicketResponse, status_code=201)
+@router.post("", response_model=TicketCreateResponse, status_code=201)
 def create_new_ticket(
     ticket_data: TicketCreate,
     db: Session = Depends(get_db),

@@ -139,3 +139,13 @@ class TicketUpdateResponse(BaseModel):
 
     success: bool = True
     updated_at: datetime
+
+
+class TicketCreateResponse(BaseModel):
+    """Slim response returned after creating a ticket."""
+
+    ticket_id: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True

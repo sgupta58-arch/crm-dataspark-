@@ -4,6 +4,7 @@ import type {
   TicketCreatePayload,
   TicketUpdatePayload,
   TicketUpdateResponse,
+  TicketCreateResponse,
 } from '../types/ticket'
 
 /**
@@ -44,7 +45,7 @@ export function fetchTicket(ticketId: string) {
 }
 
 export function createTicket(payload: TicketCreatePayload) {
-  return request<TicketDetail>('/api/tickets', {
+  return request<TicketCreateResponse>('/api/tickets', {
     method: 'POST',
     body: JSON.stringify(payload),
   })
