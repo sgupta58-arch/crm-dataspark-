@@ -86,43 +86,38 @@ class TicketListItem(BaseModel):
 
 class TicketUpdate(BaseModel):
     """
-    Schema for updating a ticket's status and/or adding a comment.
+    Schema for updating a ticket's status and/or adding a note.
 
     All fields are optional — client only sends what they want to change.
+    Field names match the PDF specification exactly (status, notes).
     """
 
     status: Optional[TicketStatus] = Field(
         default=None,
-        description="New ticket status",
+        description="New ticket status: Open, In Progress, or Closed",
     )
-    comment: Optional[str] = Field(
+    notes: Optional[str] = Field(
         default=None,
         max_length=2000,
-        description="Internal note/comment to attach to this ticket",
+        description="Note text to attach to this ticket",
     )
 
 
-class CommentResponse(BaseModel):
-    """Schema for returning a single comment on a ticket."""
+class NoteResponse(BaseModel):
+    """Schema for returning a single note on a ticket."""
 
     id: int
-    comment_text: str = Field(
-        ...,
-        alias="note_text",
-        description="The comment text (mapped from database column note_text)",
-    )
+    note_text: str
     created_by: Optional[str] = None
     created_at: datetime
-
-    class Config:
-        populate_by_name = True
 
 
 class TicketDetailResponse(BaseModel):
     """
     Schema for the detailed ticket view.
 
-    Includes all ticket fields plus associated comments.
+    Includes all ticket fields plus associated notes.
+    The notes field name matches the PDF specification exactly.
     """
 
     ticket_id: str
@@ -133,14 +128,10 @@ class TicketDetailResponse(BaseModel):
     status: TicketStatus
     created_at: datetime
     updated_at: datetime
-    comments: List[CommentResponse] = Field(
+    notes: List[NoteResponse] = Field(
         default=[],
-        alias="notes",
-        description="List of comments on this ticket",
+        description="List of notes/comments on this ticket",
     )
-
-    class Config:
-        populate_by_name = True
 
 
 class TicketUpdateResponse(BaseModel):

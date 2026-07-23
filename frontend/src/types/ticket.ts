@@ -8,9 +8,9 @@ export interface TicketListItem {
   created_at: string
 }
 
-export interface Comment {
+export interface Note {
   id: number
-  comment_text: string
+  note_text: string
   created_by: string | null
   created_at: string
 }
@@ -24,7 +24,7 @@ export interface TicketDetail {
   status: TicketStatus
   created_at: string
   updated_at: string
-  comments: Comment[]
+  notes: Note[]
 }
 
 export interface TicketCreatePayload {
@@ -36,7 +36,7 @@ export interface TicketCreatePayload {
 
 export interface TicketUpdatePayload {
   status?: TicketStatus
-  comment?: string
+  notes?: string
 }
 
 export interface TicketUpdateResponse {

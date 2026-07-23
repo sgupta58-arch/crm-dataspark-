@@ -12,7 +12,7 @@ interface Props {
 export default function TicketDetail({ ticketId, onBack }: Props) {
   const queryClient = useQueryClient()
   const [newStatus, setNewStatus] = useState('')
-  const [commentText, setCommentText] = useState('')
+  const [notesText, setNotesText] = useState('')
 
   const { data: ticket, isLoading } = useQuery<TicketDetailType>({
     queryKey: ['ticket', ticketId],
@@ -26,7 +26,7 @@ export default function TicketDetail({ ticketId, onBack }: Props) {
       queryClient.invalidateQueries({ queryKey: ['ticket', ticketId] })
       queryClient.invalidateQueries({ queryKey: ['tickets'] })
       setNewStatus('')
-      setCommentText('')
+      setNotesText('')
     },
   })
 
@@ -56,7 +56,7 @@ export default function TicketDetail({ ticketId, onBack }: Props) {
     e.preventDefault()
     const payload: TicketUpdatePayload = {}
     if (newStatus) payload.status = newStatus as TicketDetailType['status']
-    if (commentText.trim()) payload.comment = commentText.trim()
+    if (notesText.trim()) payload.notes = notesText.trim()
     if (Object.keys(payload).length > 0) mutation.mutate(payload)
   }
 
@@ -140,18 +140,18 @@ export default function TicketDetail({ ticketId, onBack }: Props) {
               </select>
             </div>
             <div>
-              <label className="text-sm text-gray-700 font-medium block mb-1.5">Add a comment:</label>
+              <label className="text-sm text-gray-700 font-medium block mb-1.5">Add a note:</label>
               <textarea
-                placeholder="Type your comment here..."
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
+                placeholder="Type your note here..."
+                value={notesText}
+                onChange={(e) => setNotesText(e.target.value)}
                 rows={3}
                 className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm resize-y"
               />
             </div>
             <button
               type="submit"
-              disabled={mutation.isPending || (!newStatus && !commentText.trim())}
+              disabled={mutation.isPending || (!newStatus && !notesText.trim())}
               className="inline-flex items-center gap-2 bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm shadow-sm transition-all cursor-pointer"
             >
               {mutation.isPending ? (
@@ -171,23 +171,23 @@ export default function TicketDetail({ ticketId, onBack }: Props) {
           </form>
         </div>
 
-        {/* Comments Section */}
+        {/* Notes Section */}
         <div className="p-6">
           <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-4">
-            Comments {ticket.comments.length > 0 && <span className="text-gray-400">({ticket.comments.length})</span>}
+            Notes {ticket.notes.length > 0 && <span className="text-gray-400">({ticket.notes.length})</span>}
           </h3>
-          {ticket.comments.length === 0 ? (
+          {ticket.notes.length === 0 ? (
             <div className="text-center py-8 bg-gray-50 rounded-lg">
               <svg className="w-8 h-8 text-gray-300 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
               </svg>
-              <p className="text-sm text-gray-400">No comments yet. Add one above.</p>
+              <p className="text-sm text-gray-400">No notes yet. Add one above.</p>
             </div>
           ) : (
             <div className="space-y-3">
-              {ticket.comments.map((comment, idx) => (
+              {ticket.notes.map((note, idx) => (
                 <div
-                  key={comment.id}
+                  key={note.id}
                   className="bg-gray-50 rounded-lg p-4 border border-gray-100"
                 >
                   <div className="flex items-start gap-3">
@@ -195,10 +195,10 @@ export default function TicketDetail({ ticketId, onBack }: Props) {
                       <span className="text-xs font-bold text-blue-600">{idx + 1}</span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-gray-700 whitespace-pre-wrap">{comment.comment_text}</p>
+                      <p className="text-sm text-gray-700 whitespace-pre-wrap">{note.note_text}</p>
                       <p className="text-xs text-gray-400 mt-2">
-                        {new Date(comment.created_at).toLocaleString()}
-                        {comment.created_by && ` — by ${comment.created_by}`}
+                        {new Date(note.created_at).toLocaleString()}
+                        {note.created_by && ` — by ${note.created_by}`}
                       </p>
                     </div>
                   </div>

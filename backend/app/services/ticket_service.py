@@ -120,12 +120,12 @@ def update_ticket(
     if update_data.status is not None:
         ticket.status = update_data.status.value
 
-    if update_data.comment is not None:
-        comment_text = _sanitize_string(update_data.comment)
-        if comment_text:  # Only create note if there's actual content
+    if update_data.notes is not None:
+        note_text = _sanitize_string(update_data.notes)
+        if note_text:  # Only create note if there's actual content
             note = Note(
                 ticket_id=ticket.id,
-                note_text=comment_text,
+                note_text=note_text,
             )
             db.add(note)
 
