@@ -842,35 +842,56 @@ Open `http://localhost:5173` and verify:
 
 ## Deployment
 
-### Backend (Railway)
-
-1. Push the repository to GitHub.
-2. Create a new project on [Railway](https://railway.app).
-3. Connect your GitHub repository.
-4. Set the root directory to `backend`.
-5. Add environment variables:
-   - `DATABASE_URL` = `sqlite:///./crm.db` (SQLite works on Railway for MVP; use PostgreSQL for production)
-   - `CORS_ORIGINS` = Your Vercel frontend URL
-6. Railway detects `requirements.txt` and installs dependencies automatically.
-7. Set the start command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
-8. Deploy.
-
-### Frontend (Vercel)
+### Backend (Vercel)
 
 1. Push the repository to GitHub.
 2. Create a new project on [Vercel](https://vercel.com).
 3. Connect your GitHub repository.
-4. Set the root directory to `frontend`.
-5. Framework preset: Vite.
-6. Build command: `npm run build`.
-7. Output directory: `dist`.
-8. Add environment variable:
-   - `VITE_API_URL` = Your Railway backend URL (e.g., `https://your-project.up.railway.app`)
-9. Deploy.
+4. Set the root directory to `backend`.
+5. Vercel will auto-detect FastAPI and use the `vercel.json` configuration.
+6. Add environment variables:
+   - `DATABASE_URL` = Your PostgreSQL connection string (see below)
+   - `CORS_ORIGINS` = Your Vercel frontend URL
+7. Deploy.
+
+**Using Vercel Postgres (Recommended):**
+1. In your Vercel backend project, go to the **Storage** tab
+2. Click **Create Database** → **Postgres**
+3. Vercel will automatically add a `POSTGRES_URL` environment variable
+4. Add a new environment variable `DATABASE_URL` with value `$POSTGRES_URL`
+5. Redeploy
+
+**Using Neon (Free PostgreSQL):**
+1. Go to [neon.tech](https://neon.tech) and sign up
+2. Create a new project
+3. Copy the connection string (format: `postgresql://user:password@ep-xxx.region.aws.neon.tech/dbname`)
+4. Add it as `DATABASE_URL` in Vercel environment variables
+
+**Using Supabase (Free PostgreSQL):**
+1. Go to [supabase.com](https://supabase.com) and create a project
+2. Go to Settings → Database → Connection string
+3. Copy the "URI" format
+4. Add it as `DATABASE_URL` in Vercel
+
+### Frontend (Vercel)
+
+1. Create a new project on [Vercel](https://vercel.com).
+2. Connect your GitHub repository.
+3. Set the root directory to `frontend`.
+4. Framework preset: Vite.
+5. Build command: `npm run build`.
+6. Output directory: `dist`.
+7. Add environment variable:
+   - `VITE_API_URL` = Your Vercel backend URL (e.g., `https://your-project.vercel.app`)
+8. Deploy.
 
 ### Database
 
-For the MVP, SQLite is embedded in the backend and requires no separate database service. Railway provides ephemeral storage, so the SQLite file persists as long as the service is running. For production, switch to Railway's PostgreSQL add-on and update `DATABASE_URL`.
+**Local Development:** SQLite is used by default. The database is stored in `backend/crm.db` and is created automatically on first run.
+
+**Production (Vercel):** PostgreSQL is required because Vercel's filesystem is read-only except for `/tmp`. SQLite data would be lost on cold starts. The application automatically uses PostgreSQL when the `DATABASE_URL` environment variable is set to a PostgreSQL connection string.
+
+**Migration:** No migration needed. SQLAlchemy's `Base.metadata.create_all()` automatically creates tables on first deploy. The ORM abstracts all database differences, so the same code works with both SQLite and PostgreSQL.
 
 ---
 

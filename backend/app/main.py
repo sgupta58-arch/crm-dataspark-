@@ -4,6 +4,8 @@ FastAPI application entry point.
 Initializes the app, creates database tables, and includes routers.
 """
 
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -12,7 +14,9 @@ from app.routers import tickets
 
 # Create all database tables that don't exist yet
 # SQLAlchemy reads all models that inherit from Base
+print("Creating database tables...")
 Base.metadata.create_all(bind=engine)
+print("Database tables created successfully!")
 
 app = FastAPI(
     title="Datastraw Support CRM",

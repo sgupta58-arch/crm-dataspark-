@@ -5,18 +5,29 @@ SQLAlchemy uses an "Engine" to talk to the database.
 A "Session" is a transactional workspace for operations.
 """
 
+import os
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-# SQLite database file path
-# The "///" means relative to the current directory
-DATABASE_URL = "sqlite:///./crm.db"
+# Database URL from environment variable
+# Defaults to SQLite for local development
+# For production (Vercel), set DATABASE_URL to PostgreSQL connection string
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "sqlite:///./crm.db"  # Default for local development
+)
 
 # Create the engine — this is the connection factory
-# connect_args is SQLite-specific: allows concurrent reads
+# SQLite needs check_same_thread=False for concurrent reads
+# PostgreSQL doesn't need this flag
+connect_args = {}
+if DATABASE_URL.startswith("sqlite"):
+    connect_args = {"check_same_thread": False}
+
 engine = create_engine(
     DATABASE_URL,
-    connect_args={"check_same_thread": False},
+    connect_args=connect_args,
 )
 
 # SessionLocal is a factory that creates new database sessions
